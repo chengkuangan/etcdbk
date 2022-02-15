@@ -2,7 +2,7 @@
 
 Instead of re-invent the wheel to create another tool to backup the `etcd` data, we are now being able to automate the Kubernetes `etcd` data backup using `etcdbk` container by reusing the existing Kubernetes features and `etcd` tool.
 
-You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Conjob`. Once it is deployed and configured, the `etcdbk` container will perform the snapshot and create the snapshot files on the pre-configured persisten volume.
+You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Conjob`. Once it is deployed and configured, the `etcdbk` container will perform the snapshot and create the snapshot files on the pre-configured persistent volume.
 
 With these snapshots created per scheduled, you can now using your existing storage backup mechanism to backup these snapshots on your backup media.
 
