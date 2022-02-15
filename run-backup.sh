@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Global Variables
 ADVERTISED_CLIENT_URL=""
