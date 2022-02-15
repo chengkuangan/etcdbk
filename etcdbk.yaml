@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: etcdbk
+  labels:
+    app.kubernetes.io/name: etcdbk
+    app.kubernetes.io/instance: etcdbk
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: etcdbk
+  labels:
+    app: etcdbk
+    app-group: etcdbk
+  name: etcdbk-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: etcdbk
+rules:
+- apiGroups: [""] 
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: etcdbk
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: etcdbk
+roleRef:
+  kind: ClusterRole 
+  name: etcdbk
+  apiGroup: rbac.authorization.k8s.io
+  
+---
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcdbk
+  namespace: etcdbk
+  labels:
+    app: etcdbk
+    app-group: etcdbk
+spec:
+  # Change the schedule here. The current value is with the timezone set to UTC+0:00
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - env:
+            - name: TZ
+              value: "Asia/Kuala_Lumpur"
+            name: etcdbk
+            image: nexus.internal:7082/repository/containers/etcdbk:1.0.0
+            imagePullPolicy: IfNotPresent
+            resources:
+              requests:
+                cpu: 100m
+                memory: 100Mi
+            volumeMounts:
+            - mountPath: /etc/kubernetes/pki/etcd
+              name: etcd-certs
+              readOnly: true
+            - mountPath: /data
+              name: data-dir
+          restartPolicy: OnFailure
+          volumes:
+          - hostPath:
+              path: /etc/kubernetes/pki/etcd
+              type: Directory
+            name: etcd-certs
+          - name: data-dir
+            persistentVolumeClaim:
+              claimName: etcdbk-data
+
