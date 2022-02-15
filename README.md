@@ -30,7 +30,7 @@ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=
 
 You can configure the container with the following environmental variables.
 
-- To turn on Development mode. By default this is `off`. This setting if more for local container testing. Please refer [Test the container locally](/README.md#test-the-container-locally) for more of this local testing.
+- To turn on Development mode. By default this is `off`. This setting if more for local container testing. Please refer [Test the container locally](#test-the-container-locally) for more of this local testing.
   ```
   DEV_MODE="on"
   ```
