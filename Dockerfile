@@ -22,8 +22,8 @@ ENV DEV_MODE="off"
 # Number of snapshot histry to keep
 ENV SNAPSHOT_HISTORY_KEEP=3
 
-RUN apk add --no-cache --virtual .build-deps git go bash
-RUN apk add --no-cache bash jq tzdata \
+RUN apk add --no-cache --virtual .build-deps git go tzdata
+RUN apk add --no-cache bash jq \
     && apk update \
     && mkdir -p ${ETCD_PATH} \
     && mkdir -p /etcd-source \
@@ -32,6 +32,7 @@ RUN apk add --no-cache bash jq tzdata \
     && ./build.sh \
     && cp /etcd-source/bin/etcdctl ${ETCD_PATH}/ \
     && rm -rf /etcd-source \
+    && rm -rf /root .cache go \
     && chmod -R +x ${ETCD_PATH}/* \
     && chown -R root:root ${ETCD_PATH} \
     && cp /usr/share/zoneinfo/$TZ /etc/localtime
@@ -47,8 +48,3 @@ USER root
 CMD "${ETCD_PATH}/run-backup.sh"
 
 #ENTRYPOINT [ "${ETCD_PATH}/run-backup.sh" ]
-
-
-
-
-
