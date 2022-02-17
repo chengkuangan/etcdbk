@@ -22,8 +22,8 @@ ENV DEV_MODE="off"
 # Number of snapshot histry to keep
 ENV SNAPSHOT_HISTORY_KEEP=3
 
-RUN apk add --no-cache --virtual .build-deps git go tzdata
-RUN apk add --no-cache bash jq \
+RUN apk add --no-cache --virtual .build-deps git go
+RUN apk add --no-cache bash tzdata jq \
     && apk update \
     && mkdir -p ${ETCD_PATH} \
     && mkdir -p /etcd-source \
