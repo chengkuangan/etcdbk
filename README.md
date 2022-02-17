@@ -70,6 +70,7 @@ You can configure the container with the following environmental variables.
   ```
 3. Run the following to test the container locally. The container will make a remote connectiong to your Kubernetes `etcd` instace.
   ```
+  ETCD_VERSION=v3.5.0
   $ docker run -it \
   -v $(pwd)/data:/data \
   -v $(pwd)/ca.crt:/tmp/ca.crt \
@@ -77,7 +78,7 @@ You can configure the container with the following environmental variables.
   -v $(pwd)/server.key:/tmp/server.key \
   -e DEV_MODE="on" \
   -e SNAPSHOT_HISTORY_KEEP=2 \
-  nexus.internal:7082/repository/containers/etcdbk:1.0.0 /etcd/run-backup.sh kube0.internal https://${ETCD_NODE}:2379 /tmp/ca.crt /tmp/server.crt /tmp/server.key
+  nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 /etcd/run-backup.sh kube0.internal https://${ETCD_NODE}:2379 /tmp/ca.crt /tmp/server.crt /tmp/server.key
   ```
 
 ## Deploy into Kubernetes
