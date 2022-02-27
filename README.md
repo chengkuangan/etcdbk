@@ -155,49 +155,21 @@ You will observe the output similar to the following:
 <summary>Sample output</summary>
 
     ```    
-    2022-02-14-10:22:37 AM   INFO    Timezone: Asia/Kuala_Lumpur
-    2022-02-14-10:22:40 AM   INFO    Startinng snapshot for etcd-kube0.internal ... 
-    2022-02-14-10:22:40 AM   INFO    ADVERTISED_CLIENT_URL = https://10.0.0.110:2379
-    2022-02-14-10:22:40 AM   INFO    ETCD_SERVER_CERT = /etc/kubernetes/pki/etcd/server.crt
-    2022-02-14-10:22:40 AM   INFO    ETCD_SERVER_KEY = /etc/kubernetes/pki/etcd/server.key
-    2022-02-14-10:22:40 AM   INFO    ETCD_CACERT = /etc/kubernetes/pki/etcd/ca.crt
-    2022-02-14-10:22:40 AM   INFO    Backing up etcd-kube0.internal ... Snapshot file: /data/snapshots/etcd-kube0.internal-2022-02-14-10-22-1644805360 ...
-    2022-02-14-10:22:41 AM   INFO    {"level":"info","ts":1644805360.7372284,"caller":"snapshot/v3_snapshot.go:68","msg":"created temporary db file","path":"/data/snapshots/etcd-kube0.internal-2022-02-14-10-22-1644805360.etcdbk.part"}
-    {"level":"info","ts":1644805360.7733529,"logger":"client","caller":"v3/maintenance.go:211","msg":"opened snapshot stream; downloading"}
-    {"level":"info","ts":1644805360.7735403,"caller":"snapshot/v3_snapshot.go:76","msg":"fetching snapshot","endpoint":"https://10.0.0.110:2379"}
-    {"level":"info","ts":1644805361.3304493,"logger":"client","caller":"v3/maintenance.go:219","msg":"completed snapshot read; closing"}
-    {"level":"info","ts":1644805361.4925508,"caller":"snapshot/v3_snapshot.go:91","msg":"fetched snapshot","endpoint":"https://10.0.0.110:2379","size":"12 MB","took":"now"}
-    {"level":"info","ts":1644805361.4962344,"caller":"snapshot/v3_snapshot.go:100","msg":"saved","path":"/data/snapshots/etcd-kube0.internal-2022-02-14-10-22-1644805360.etcdbk"}
-    Snapshot saved at /data/snapshots/etcd-kube0.internal-2022-02-14-10-22-1644805360.etcdbk
-    2022-02-14-10:22:41 AM   INFO    Cleaning old snapshots ... Number of snapshots to keep: 3
-    2022-02-14-10:22:41 AM   INFO    Startinng snapshot for etcd-kube1.internal ... 
-    2022-02-14-10:22:41 AM   INFO    ADVERTISED_CLIENT_URL = https://10.0.0.111:2379
-    2022-02-14-10:22:41 AM   INFO    ETCD_SERVER_CERT = /etc/kubernetes/pki/etcd/server.crt
-    2022-02-14-10:22:41 AM   INFO    ETCD_SERVER_KEY = /etc/kubernetes/pki/etcd/server.key
-    2022-02-14-10:22:41 AM   INFO    ETCD_CACERT = /etc/kubernetes/pki/etcd/ca.crt
-    2022-02-14-10:22:42 AM   INFO    Backing up etcd-kube1.internal ... Snapshot file: /data/snapshots/etcd-kube1.internal-2022-02-14-10-22-1644805362 ...
-    2022-02-14-10:22:42 AM   INFO    {"level":"info","ts":1644805362.1064086,"caller":"snapshot/v3_snapshot.go:68","msg":"created temporary db file","path":"/data/snapshots/etcd-kube1.internal-2022-02-14-10-22-1644805362.etcdbk.part"}
-    {"level":"info","ts":1644805362.1441925,"logger":"client","caller":"v3/maintenance.go:211","msg":"opened snapshot stream; downloading"}
-    {"level":"info","ts":1644805362.1461382,"caller":"snapshot/v3_snapshot.go:76","msg":"fetching snapshot","endpoint":"https://10.0.0.111:2379"}
-    {"level":"info","ts":1644805362.6125894,"logger":"client","caller":"v3/maintenance.go:219","msg":"completed snapshot read; closing"}
-    {"level":"info","ts":1644805362.7801385,"caller":"snapshot/v3_snapshot.go:91","msg":"fetched snapshot","endpoint":"https://10.0.0.111:2379","size":"12 MB","took":"now"}
-    {"level":"info","ts":1644805362.7833838,"caller":"snapshot/v3_snapshot.go:100","msg":"saved","path":"/data/snapshots/etcd-kube1.internal-2022-02-14-10-22-1644805362.etcdbk"}
-    Snapshot saved at /data/snapshots/etcd-kube1.internal-2022-02-14-10-22-1644805362.etcdbk
-    2022-02-14-10:22:42 AM   INFO    Cleaning old snapshots ... Number of snapshots to keep: 3
-    2022-02-14-10:22:42 AM   INFO    Startinng snapshot for etcd-kube2.internal ... 
-    2022-02-14-10:22:43 AM   INFO    ADVERTISED_CLIENT_URL = https://10.0.0.112:2379
-    2022-02-14-10:22:43 AM   INFO    ETCD_SERVER_CERT = /etc/kubernetes/pki/etcd/server.crt
-    2022-02-14-10:22:43 AM   INFO    ETCD_SERVER_KEY = /etc/kubernetes/pki/etcd/server.key
-    2022-02-14-10:22:43 AM   INFO    ETCD_CACERT = /etc/kubernetes/pki/etcd/ca.crt
-    2022-02-14-10:22:43 AM   INFO    Backing up etcd-kube2.internal ... Snapshot file: /data/snapshots/etcd-kube2.internal-2022-02-14-10-22-1644805363 ...
-    2022-02-14-10:22:44 AM   INFO    {"level":"info","ts":1644805363.3572466,"caller":"snapshot/v3_snapshot.go:68","msg":"created temporary db file","path":"/data/snapshots/etcd-kube2.internal-2022-02-14-10-22-1644805363.etcdbk.part"}
-    {"level":"info","ts":1644805363.3792672,"logger":"client","caller":"v3/maintenance.go:211","msg":"opened snapshot stream; downloading"}
-    {"level":"info","ts":1644805363.3793912,"caller":"snapshot/v3_snapshot.go:76","msg":"fetching snapshot","endpoint":"https://10.0.0.112:2379"}
-    {"level":"info","ts":1644805363.917968,"logger":"client","caller":"v3/maintenance.go:219","msg":"completed snapshot read; closing"}
-    {"level":"info","ts":1644805364.0815985,"caller":"snapshot/v3_snapshot.go:91","msg":"fetched snapshot","endpoint":"https://10.0.0.112:2379","size":"12 MB","took":"now"}
-    {"level":"info","ts":1644805364.0865147,"caller":"snapshot/v3_snapshot.go:100","msg":"saved","path":"/data/snapshots/etcd-kube2.internal-2022-02-14-10-22-1644805363.etcdbk"}
-    Snapshot saved at /data/snapshots/etcd-kube2.internal-2022-02-14-10-22-1644805363.etcdbk
-    2022-02-14-10:22:44 AM   INFO    Cleaning old snapshots ... Number of snapshots to keep: 3
+    2022-02-27-14:15:09 PM   INFO    Timezone: Asia/Kuala_Lumpur
+    2022-02-27-14:15:15 PM   INFO    Starting snapshot for etcd in node kube2.local ... 
+    2022-02-27-14:15:16 PM   INFO    ADVERTISED_CLIENT_URL = https://10.0.0.102:2379
+    2022-02-27-14:15:16 PM   INFO    ETCD_SERVER_CERT = /etc/kubernetes/pki/etcd/server.crt
+    2022-02-27-14:15:16 PM   INFO    ETCD_SERVER_KEY = /etc/kubernetes/pki/etcd/server.key
+    2022-02-27-14:15:16 PM   INFO    ETCD_CACERT = /etc/kubernetes/pki/etcd/ca.crt
+    2022-02-27-14:15:17 PM   INFO    Backing up etcd-kube2.local ... Snapshot file: /data/snapshots/etcd-kube2.local-2022-02-27-14-15-1645942517 ...
+    2022-02-27-14:15:18 PM   INFO    {"level":"info","ts":1645942517.8480756,"caller":"snapshot/v3_snapshot.go:68","msg":"created temporary db file","path":"/data/snapshots/etcd-kube2.local-2022-02-27-14-15-1645942517.etcdbk.part"}
+    {"level":"info","ts":1645942517.8523066,"logger":"client","caller":"v3/maintenance.go:211","msg":"opened snapshot stream; downloading"}
+    {"level":"info","ts":1645942517.8524687,"caller":"snapshot/v3_snapshot.go:76","msg":"fetching snapshot","endpoint":"https://10.0.0.102:2379"}
+    {"level":"info","ts":1645942518.436307,"logger":"client","caller":"v3/maintenance.go:219","msg":"completed snapshot read; closing"}
+    {"level":"info","ts":1645942518.6646767,"caller":"snapshot/v3_snapshot.go:91","msg":"fetched snapshot","endpoint":"https://10.0.0.102:2379","size":"12 MB","took":"now"}
+    {"level":"info","ts":1645942518.759678,"caller":"snapshot/v3_snapshot.go:100","msg":"saved","path":"/data/snapshots/etcd-kube2.local-2022-02-27-14-15-1645942517.etcdbk"}
+    Snapshot saved at /data/snapshots/etcd-kube2.local-2022-02-27-14-15-1645942517.etcdbk
+    2022-02-27-14:15:18 PM   INFO    Cleaning old snapshots ... Number of snapshots to keep: 3
 
     ```
 
