@@ -76,6 +76,10 @@ spec:
           - env:
             - name: TZ
               value: "Asia/Kuala_Lumpur"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             name: etcdbk
             image: nexus.internal:7082/repository/containers/etcdbk:1.0.0
             imagePullPolicy: Always

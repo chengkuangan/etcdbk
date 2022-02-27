@@ -83,35 +83,40 @@ function cleanOldSnapshots(){
 function process_backup(){
 
     ETCD_PODS_NAMES=$(${KUBE_PATH}/kubectl get pod -l component=etcd -o jsonpath="{.items[*].metadata.name}" -n kube-system) 
-
+    
+    # Keeping the for loop just in case in future the ectd pod name changed, so comparing the ends-with node name more promising.
     for etcd in $ETCD_PODS_NAMES
     do
-        logInfo "Startinng snapshot for $etcd ... "
-
-        COMMANDS=$(${KUBE_PATH}/kubectl get pods $etcd -n kube-system -o=jsonpath='{.spec.containers[0].command}')
+        #logInfo "Startinng snapshot for $etcd ... "
         
-        for row in $(echo "${COMMANDS}" | jq -r '.[]'); do
-            if [[ ${row} = --advertise-client-urls* ]]; then
-                ADVERTISED_CLIENT_URL=$(paramValue ${row} "=")
-                logInfo "ADVERTISED_CLIENT_URL = ${ADVERTISED_CLIENT_URL}"
-            elif [[ ${row} = --cert-file* ]]; then
-                ETCD_SERVER_CERT=$(paramValue ${row} "=")
-                logInfo "ETCD_SERVER_CERT = ${ETCD_SERVER_CERT}"
-            elif [[ ${row} = --key-file* ]]; then
-                ETCD_SERVER_KEY=$(paramValue ${row} "=")
-                logInfo "ETCD_SERVER_KEY = ${ETCD_SERVER_KEY}"
-            elif [[ ${row} = --trusted-ca-file* ]]; then
-                ETCD_CACERT=$(paramValue ${row} "=")
-                logInfo "ETCD_CACERT = ${ETCD_CACERT}"
-            fi
-        done
+        if [[ "$etcd" == *${NODE_NAME} ]] ; then
 
-        cp ${ETCD_CACERT} /tmp/$etcd-ca.crt && cp ${ETCD_SERVER_CERT} /tmp/$etcd-server.crt && cp ${ETCD_SERVER_KEY} /tmp/$etcd-server.key
+            logInfo "Starting snapshot for etcd in node ${NODE_NAME} ... "
 
-        snapshot "${etcd}" "${ADVERTISED_CLIENT_URL}" "/tmp/$etcd-ca.crt" "/tmp/$etcd-server.crt" "/tmp/$etcd-server.key"
-        
-        cleanOldSnapshots "${etcd}"
+            COMMANDS=$(${KUBE_PATH}/kubectl get pods $etcd -n kube-system -o=jsonpath='{.spec.containers[0].command}')
+            
+            for row in $(echo "${COMMANDS}" | jq -r '.[]'); do
+                if [[ ${row} = --advertise-client-urls* ]]; then
+                    ADVERTISED_CLIENT_URL=$(paramValue ${row} "=")
+                    logInfo "ADVERTISED_CLIENT_URL = ${ADVERTISED_CLIENT_URL}"
+                elif [[ ${row} = --cert-file* ]]; then
+                    ETCD_SERVER_CERT=$(paramValue ${row} "=")
+                    logInfo "ETCD_SERVER_CERT = ${ETCD_SERVER_CERT}"
+                elif [[ ${row} = --key-file* ]]; then
+                    ETCD_SERVER_KEY=$(paramValue ${row} "=")
+                    logInfo "ETCD_SERVER_KEY = ${ETCD_SERVER_KEY}"
+                elif [[ ${row} = --trusted-ca-file* ]]; then
+                    ETCD_CACERT=$(paramValue ${row} "=")
+                    logInfo "ETCD_CACERT = ${ETCD_CACERT}"
+                fi
+            done
 
+            cp ${ETCD_CACERT} /tmp/$etcd-ca.crt && cp ${ETCD_SERVER_CERT} /tmp/$etcd-server.crt && cp ${ETCD_SERVER_KEY} /tmp/$etcd-server.key
+
+            snapshot "${etcd}" "${ADVERTISED_CLIENT_URL}" "/tmp/$etcd-ca.crt" "/tmp/$etcd-server.crt" "/tmp/$etcd-server.key"
+            
+            cleanOldSnapshots "${etcd}"
+        fi
     done
 }
 
