@@ -72,7 +72,7 @@ function snapshot(){
 function cleanOldSnapshots(){
     logInfo "Cleaning old snapshots ... Number of snapshots to keep: $SNAPSHOT_HISTORY_KEEP"
     COUNTER=0;
-    for FILE in `ls ${BAKCUP_PATH}/$1* | sort -r`; do 
+    for FILE in `ls ${BAKCUP_PATH}/$1*`; do 
         COUNTER=$[$COUNTER+1]
         if [ "$COUNTER" -gt "$SNAPSHOT_HISTORY_KEEP" ]; then
             rm $FILE
