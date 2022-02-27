@@ -95,6 +95,7 @@ function process_backup(){
 
             COMMANDS=$(${KUBE_PATH}/kubectl get pods $etcd -n kube-system -o=jsonpath='{.spec.containers[0].command}')
             
+            
             for row in $(echo "${COMMANDS}" | jq -r '.[]'); do
                 if [[ ${row} = --advertise-client-urls* ]]; then
                     ADVERTISED_CLIENT_URL=$(paramValue ${row} "=")
