@@ -24,6 +24,14 @@ spec:
       storage: 1Gi
 ---
 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcdbk
+  namespace: etcdbk
+
+---
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -41,13 +49,13 @@ metadata:
   name: etcdbk
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: etcdbk
   namespace: etcdbk
 roleRef:
   kind: ClusterRole 
   name: etcdbk
   apiGroup: rbac.authorization.k8s.io
-  
+
 ---
 
 
@@ -95,6 +103,7 @@ spec:
             - mountPath: /data
               name: data-dir
           restartPolicy: OnFailure
+          serviceAccountName: etcdbk
           tolerations:
           - effect: NoSchedule
             operator: Exists
