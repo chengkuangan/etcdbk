@@ -64,6 +64,7 @@ You can configure the container with the following environmental variables.
   $ SSH_USER=john
   $ ETCD_NODE=10.0.0.110
   $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/ca.crt ./ca.crt
+  $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/server.crt ./server.crt
   $ ssh ${SSH_USER}@${ETCD_NODE} "sudo cp /etc/kubernetes/pki/etcd/server.key /tmp/server.key && sudo chmod 777 /tmp/server.key"
   $ scp ${SSH_USER}@${ETCD_NODE}:/tmp/server.key ./server.key
   $ ssh ${SSH_USER}@${ETCD_NODE} sudo rm /tmp/server.key
