@@ -176,4 +176,7 @@ You will observe the output similar to the following:
 
 </details>
 
-    
+
+# Important Notes
+
+You need to backup the `pki certs` in the each of the control plane node in order to restore your cluster. It is especially important to have all the `pki certs` for each node if you experience total lost of etcd chorum. The pki certs are located in `/etc/kubernetes/pki`
