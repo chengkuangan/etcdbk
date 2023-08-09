@@ -44,7 +44,9 @@ function warn(){
 }
 
 function debug(){
-    log "DEBUG   $1"
+    if [ "${LOG_LEVEL}" = "debug" ]; then
+        log "DEBUG   $1"
+    fi
 }
 
 # Run snapshot for the specific etcd instance
@@ -68,17 +70,21 @@ function snapshot(){
 }
 
 # Remove and maintaine snapshots number <= SNAPSHOT_HISTORY_KEEP
-# Params: $1 - etcd snapshot file name prefix
 function cleanOldSnapshots(){
+    
     logInfo "Cleaning old snapshots ... Number of snapshots to keep: $SNAPSHOT_HISTORY_KEEP"
-    COUNTER=0;
-    # need to sort explicitly because of the filename is timestamp-based
-    for FILE in `ls ${BAKCUP_PATH}/$1* | sort -r`; do 
-        COUNTER=$[$COUNTER+1]
-        #debug "cleanOldSnapshots -> COUNTER = $COUNTER"
-        if [ $COUNTER -gt $SNAPSHOT_HISTORY_KEEP ]; then
-            #debug "cleanOldSnapshots -> rm $FILE"
-            rm $FILE
+    
+    COUNTER=$(ls ${BAKCUP_PATH} | wc -l);
+    
+    debug "Backup path: ${BAKCUP_PATH}"
+    debug "Total snapshop file: ${COUNTER}"
+
+    for FILE in `ls -tr ${BAKCUP_PATH}/`; do 
+        COUNTER=$[$COUNTER-1]
+        if [ $[$COUNTER+1] -gt $SNAPSHOT_HISTORY_KEEP ]; then
+            debug "Going to delete snapshot ${BAKCUP_PATH}/$FILE ... "
+            rm ${BAKCUP_PATH}/$FILE
+            debug "Snapshot ${BAKCUP_PATH}/$FILE is deleted."
         fi
     done
 }
@@ -119,7 +125,7 @@ function process_backup(){
 
             snapshot "${etcd}" "${ADVERTISED_CLIENT_URL}" "/tmp/$etcd-ca.crt" "/tmp/$etcd-server.crt" "/tmp/$etcd-server.key"
             
-            cleanOldSnapshots "${etcd}"
+            cleanOldSnapshots
         fi
     done
 }

@@ -34,6 +34,8 @@ ENV TZ="Etc/GMT"
 ENV DEV_MODE="off"
 # Number of snapshot history to keep
 ENV SNAPSHOT_HISTORY_KEEP=3
+# Log Level: info, debug
+ENV LOG_LEVEL="info"
 
 Run microdnf update -y \
     && microdnf install -y jq wget \

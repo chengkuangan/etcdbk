@@ -17,6 +17,7 @@ You will need to create and configure a multi-arch profile before proceed. Pleas
 The current `etcd` version is defaulted to "v3.5.0" in the [Dockerfile](./Dockerfile). 
 You can change the `etcd` version to your preferred version using `--build-arg ETCD_VERSION=v3.5.0` at the `docker build` command.
 
+
 ```
 $ ETCD_VERSION=v3.5.0
 $ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0  -f Dockerfile --push .
@@ -25,6 +26,14 @@ $ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSIO
 docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 -f Dockerfile --push --output=type=registry,registry.insecure=true .
 
 ```
+> Note:
+> How to find out current etcd version in your system?
+> Run the following command to check on the etcd manifests yaml file.
+> ```
+> sudo su -
+> cat /etc/kubernetes/manifests/etcd.yaml | grep "image: k8s.gcr.io/etcd:"
+> ```
+>  
 
 ## Configuration
 
