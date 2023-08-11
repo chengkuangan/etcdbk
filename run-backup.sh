@@ -49,6 +49,27 @@ function debug(){
     fi
 }
 
+function printEnv(){
+
+    logInfo "Environmental Variables:"
+
+    echo "KUBE_VERSION:${KUBE_VERSION}"
+    echo "DATA_PATH:${DATA_PATH}"
+    echo "ETCD_PATH:${ETCD_PATH}"
+    echo "BAKCUP_PATH:${BAKCUP_PATH}"
+    echo "PKI_BACKUP_PATH:${PKI_BACKUP_PATH}"
+    echo "KUBE_PATH:${KUBE_PATH}"
+    echo "LOG_DIR:${LOG_DIR}"
+    echo "KUBE_PKI_PATH:${KUBE_PKI_PATH}"
+    echo "ETCD_PKI_HOSTPATH:${ETCD_PKI_HOSTPATH}"
+    echo "TZ:${TZ}"
+    echo "DEV_MODE:${DEV_MODE}"
+    echo "SNAPSHOT_HISTORY_KEEP:${SNAPSHOT_HISTORY_KEEP}"
+    echo "LOG_LEVEL:${LOG_LEVEL}"
+    echo "PKI_HISTORY_KEEP:${PKI_HISTORY_KEEP}"
+    
+}
+
 # Run snapshot for the specific etcd instance
 # Input: $1 - etcd url, $2 - etcd name, $3 - ca.crt, $4 - server.crt, $5 - server.key
 function snapshot(){
@@ -69,12 +90,38 @@ function snapshot(){
 
 }
 
+function backupCerts(){
+
+    TIMESTAMP=$(date '+%Y-%m-%d-%H-%M-%s')
+    
+    logInfo "Backing up PKI Certificates ..."
+
+    mkdir ${PKI_BACKUP_PATH}/${TIMESTAMP}
+    
+    CP_VERBOSE=""
+
+    if [ "${LOG_LEVEL}" = "debug" ]; then
+        CP_VERBOSE="v"
+    fi
+
+    if [[ ! -z "${KUBE_LOCAL_PKI_PATH}" ]]; then
+        cp -a${CP_VERBOSE} ${KUBE_LOCAL_PKI_PATH}/. ${PKI_BACKUP_PATH}/${TIMESTAMP}/
+    else
+        cp -a${CP_VERBOSE} ${KUBE_PKI_PATH}/. ${PKI_BACKUP_PATH}/${TIMESTAMP}/
+    fi
+
+    if [ "$?" = "0" ]; then 
+        logInfo "PKI Certificates are backed up into directory: ${PKI_BACKUP_PATH}/${TIMESTAMP}"
+    fi
+
+}
+
 # Remove and maintaine snapshots number <= SNAPSHOT_HISTORY_KEEP
 function cleanOldSnapshots(){
     
     logInfo "Cleaning old snapshots ... Number of snapshots to keep: $SNAPSHOT_HISTORY_KEEP"
     
-    COUNTER=$(ls ${BAKCUP_PATH} | wc -l);
+    COUNTER=$(ls ${BAKCUP_PATH}/ | wc -l);
     
     debug "Backup path: ${BAKCUP_PATH}"
     debug "Total snapshop file: ${COUNTER}"
@@ -89,11 +136,43 @@ function cleanOldSnapshots(){
     done
 }
 
+# Remove and maintaine PKI backup copies <= PKI_HISTORY_KEEP
+function cleanOldPKI(){
+    
+    logInfo "Cleaning old PKI backup ... Number of backup to keep: $PKI_HISTORY_KEEP"
+    
+    cd ${PKI_BACKUP_PATH}
+    
+    COUNTER=0
+
+    ls -dtr */ &> /dev/null
+
+    # `ls -d` return error if not directory exists
+    if [ "$?" = "0" ]; then
+        COUNTER=$(ls -dtr */ | wc -l);
+    fi
+
+    debug "Backup path: ${PKI_BACKUP_PATH}"
+    debug "Total backup file set: ${COUNTER}"
+    
+    for FILE in `ls -dtr */`; do 
+        COUNTER=$[$COUNTER-1]
+        if [ $[$COUNTER+1] -gt $PKI_HISTORY_KEEP ]; then
+            debug "Going to delete PKI backup ${PKI_BACKUP_PATH}/$FILE ... "
+            rm -rf ${PKI_BACKUP_PATH}/$FILE
+            debug "Backup ${PKI_BACKUP_PATH}/$FILE is deleted."
+        fi
+    done
+}
+
+
 function process_backup(){
 
     ETCD_PODS_NAMES=$(${KUBE_PATH}/kubectl get pod -l component=etcd -o jsonpath="{.items[*].metadata.name}" -n kube-system) 
     
     # Keeping the for loop just in case in future the ectd pod name changed, so comparing the ends-with node name more promising.
+    # Another reason of doing this lookup is to make sure we are using the correct etcd-name and config for which this POD could be running. 
+    # each time, it could be running on different control plane.
     for etcd in $ETCD_PODS_NAMES
     do
         #logInfo "Startinng snapshot for $etcd ... "
@@ -128,6 +207,10 @@ function process_backup(){
             cleanOldSnapshots
         fi
     done
+
+    backupCerts
+    cleanOldPKI
+
 }
 
 function downloadKubeFiles(){
@@ -163,8 +246,7 @@ function init(){
     mkdir -p ${BAKCUP_PATH}
     mkdir -p ${KUBE_PATH}
     mkdir -p ${LOG_DIR}
-
-    logInfo "Timezone: ${TZ}"
+    mkdir -p ${PKI_BACKUP_PATH}
 
     if [ ! -f "${KUBE_PATH}/kubectl" ]; then 
         downloadKubeFiles
@@ -179,16 +261,21 @@ function init(){
 
 init
 
+printEnv
+
 if [ "${DEV_MODE}" = "on" ]; then
     logInfo "DEV_MODE is on."
     if [ $# -eq 0 ]; then
         logError "Missing etcd server url and etcd name at the command line argument. command syntax"
-        logError "Expected command syntax: run-backup.sh <etcd name> <etcd url> <ca.crt> <server.crt> <server.key>"
+        logError "Expected command syntax: /etcd/run-backup.sh <etcd name> <etcd url> <ca.crt> <server.crt> <server.key> "
         exit 1
     fi
     logInfo "Command line arguments: $@"
+    KUBE_LOCAL_PKI_PATH=/tmp/certs
     snapshot $@
-    cleanOldSnapshots "$1"
+    cleanOldSnapshots
+    backupCerts
+    cleanOldPKI
 else
     process_backup
 fi

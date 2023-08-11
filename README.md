@@ -1,66 +1,63 @@
 # etcdbk - An automated backup tool for Kubernetes etcd data
 
-Instead of re-invent the wheel to create another tool to backup the `etcd` data, we are now being able to automate the Kubernetes `etcd` data backup using `etcdbk` container by reusing the existing Kubernetes features and `etcd` tool.
+Instead of re-invent the wheel to create another tool to backup the Kubernetes `etcd` data, we can now automate the Kubernetes `etcd` data backup using `etcdbk` container by reusing the existing Kubernetes `kubectl` and `etcd` tool.
 
-You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Conjob`. Once it is deployed and configured, the `etcdbk` container will perform the snapshot and create the snapshot files on the pre-configured persistent volume.
+You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Conjob`. Once it is deployed and configured, the `etcdbk` container will perform the `etcd` snapshot and create the snapshot files on the pre-configured persistent volume. The respective PKI certs are backup into the same PV.
 
-With these snapshots created per scheduled, you can now using your existing storage backup mechanism to backup these snapshots on your backup media.
+With these snapshots created per scheduled, you can now using your existing storage backup mechanism to backup these snapshots to your backup media.
 
-It is currently based on Alpine base image and supports both `amd64` and `arm64` architecture. 
+It is currently based on `redhat/ubi8-minimal` base image and supports both Linux `amd64` and `arm64` architecture. 
+
+> Note: No intention to provide ready build container images. It will be nightmare to build and test container images for different Kubernetes versions. The best is to build the container image, test and deploy your own. Please let me know if there is any problem.
 
 ## Build the Container
 
 You can use Docker to build the container image. 
 
-You will need to create and configure a multi-arch profile before proceed. Please refer the [documentation here](https://docs.docker.com/desktop/multi-arch/) for how to create a multi-arch build environment.
+To build multi-arc container image, you will need to create and configure a multi-arch profile before proceed. Please refer the [documentation here](https://docs.docker.com/desktop/multi-arch/) for how to create a multi-arch build environment.
 
 The current `etcd` version is defaulted to "v3.5.0" in the [Dockerfile](./Dockerfile). 
-You can change the `etcd` version to your preferred version using `--build-arg ETCD_VERSION=v3.5.0` at the `docker build` command.
+There is not intention or need to change this because you can change the `etcd` version to your preferred version using `--build-arg ETCD_VERSION=v3.5.0` at the `docker build` command.
 
+You can build and push to public container registry:
 
 ```
 $ ETCD_VERSION=v3.5.0
 $ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0  -f Dockerfile --push .
+```
 
+Build and push to internal registy:
+
+```
 # Internal insecured registry
 docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 -f Dockerfile --push --output=type=registry,registry.insecure=true .
 
 ```
-> Note:
-> How to find out current etcd version in your system?
+> Note: How to find out current etcd version in your system?
 > Run the following command to check on the etcd manifests yaml file.
 > ```
 > sudo su -
 > cat /etc/kubernetes/manifests/etcd.yaml | grep "image: k8s.gcr.io/etcd:"
 > ```
->  
 
-## Configuration
+## Runtime Configuration
 
-You can configure the container with the following environmental variables.
+You can configure the container runtime behaviour with the following environmental variables:
 
-- To turn on Development mode. By default this is `off`. This setting if more for local container testing. Please refer [Test the container locally](#test-the-container-locally) for more of this local testing.
-  ```
-  DEV_MODE="on"
-  ```
-- To configure the number of snapshot files to keep. Default is 3 latest files.
-  ```
-  SNAPSHOT_HISTORY_KEEP=3
-  ```
-- To specify the `kubectl` version to use. The current Dockerfile version is defaulted to `v1.22.4`.
-  ```
-  KUBE_VERSION=v1.22.4
-  ```
-- To change the default mount path in the container. You will need to create a volume for this directory. This directory is used to store snapshot files, `kubectl` binary and logs.
-  ```
-  DATA_PATH="/data"
-  ```
-- Change the default timezone. This timezone is used for naming the snapshot files and the date time used in the logs. 
-  ```
-  TZ="Etc/GMT"
-  ```
+
+| Name      | Default |  Description |
+|----|----|----|
+| DEV_MODE      | off |  To turn on Development mode. This setting is more for local container testing. Refer Section [Test the Container Locally](#test-the-container-locally) for more detail. |
+| SNAPSHOT_HISTORY_KEEP  | 3  | To configure the number of snapshot files to keep. Each of the `etcd` snapshot file name is suffix with timestamp and ends with `.etcdbk` file extension.  |
+| PKI_HISTORY_KEEP  | 3  | To configure number of PKI certificates to keep. Each set of PKI certs are backup into a different directory name suffix with timestamp. |
+| KUBE_VERSION  | v1.22.4  | To specify the `kubectl` version to use. No intention to change this in the source code. You can always modify this during container build by entering `--build-arg ETCD_VERSION=v3.5.0` at the build command. `kubectl` is downloaded during container initial startup. The container build does not package any `kubectl` command tool. When a new version is configured during later container launch, the new version is downloaded replacing the existing old version. `kubectl` tool is used to query some of the `etcd` POD information. `etcd` name is required when `etcd` tool is used to perform the snapshot. Since the POD can be deployed dynamically into different control plane each time it is started, we cannot hardcode the `etcd` name and no better way to configure this as runtime variable. So one of the usage of `kubectl` in the container is used to find out the `etcd` name dynamically. |
+| DATA_PATH  | /data  | Change this to the PV that you have created if it is not the same. This directory is used to store `etcd` snapshot files, PKI backup files, `kubectl` binary and logs.  |
+| TZ  | Etc/GMT  | Change the default timezone. This timezone is used for naming the snapshot files, PKI certs directory and the date time used in the logs.   |
+| LOG_LEVEL  |  info |  Change the log level. Possible string value is `info` and `debug` |
 
 ## Test the container locally
+
+> Note: You need to build the container first. Push it to your own local container registry or public registry before proceed to perform local run. Refer [Build the Container](#build-the-container).
 
 1. Make a local directory
   ```
@@ -68,7 +65,7 @@ You can configure the container with the following environmental variables.
   $ cd etcdbk
   ```
 
-2. Copy `ca.cert`, `server.crt` and `server.key` from the `etcd` node.
+2. Copy `ca.cert`, `server.crt` and `server.key` from the existing Kubernetes `etcd` node.
   ```
   $ SSH_USER=john
   $ ETCD_NODE=10.0.0.110
@@ -78,16 +75,24 @@ You can configure the container with the following environmental variables.
   $ scp ${SSH_USER}@${ETCD_NODE}:/tmp/server.key ./server.key
   $ ssh ${SSH_USER}@${ETCD_NODE} sudo rm /tmp/server.key
   ```
-3. Run the following to test the container locally. The container will make a remote connectiong to your Kubernetes `etcd` instace.
+
+3. Create local directory named `certs` in the same root directory. Copy some sample certificates into this directory. They can be the certificates you downloaded from previous step. This is required only for local testing.
+
+4. Run the following to test the container locally. The container will make a remote connection to your Kubernetes `etcd` instance.
+
   ```
-  ETCD_VERSION=v3.5.0
-  $ docker run -it \
+  ETCD_VERSION=v3.5.0; docker run -it \
   -v $(pwd)/data:/data \
   -v $(pwd)/ca.crt:/tmp/ca.crt \
   -v $(pwd)/server.crt:/tmp/server.crt \
   -v $(pwd)/server.key:/tmp/server.key \
+  -v $(pwd)/certs:/tmp/certs \
   -e DEV_MODE="on" \
+  -e LOG_LEVEL="debug" \
+  -e PKI_BAKCUP_PATH=./pki \
+  -e PKI_HISTORY_KEEP=2 \
   -e SNAPSHOT_HISTORY_KEEP=2 \
+  --rm \
   nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 /etcd/run-backup.sh kube0.internal https://${ETCD_NODE}:2379 /tmp/ca.crt /tmp/server.crt /tmp/server.key
   ```
 
@@ -122,11 +127,23 @@ You can configure the container with the following environmental variables.
     ```
     Refer the timezone values at [wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
-3. The YAML also defines the location for the `etcd` POD PKI certificates and key using a `Hostpath` definition. We also define the PVC to store the snapshot file. This is also the location for the log file.
+3. In order to be able to read the PKI certs and etcd certs, the container need to be deployed on one of the controle plane nodes. You can do this with `nodeAffinity`
+
+    ```yaml
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+    ```
+
+4. The YAML also defines the location for the `etcd` POD PKI certificates and key using a `Hostpath` definition. We also define the PVC to store the snapshot file. This is also the location for the log file.
 
     ```yaml
             volumeMounts:
-              - mountPath: /etc/kubernetes/pki/etcd
+              - mountPath: /etc/kubernetes/pki
                 name: etcd-certs
                 readOnly: true
               - mountPath: /data
@@ -134,7 +151,7 @@ You can configure the container with the following environmental variables.
           restartPolicy: OnFailure
           volumes:
           - hostPath:
-              path: /etc/kubernetes/pki/etcd
+              path: /etc/kubernetes/pki
               type: Directory
             name: etcd-certs
           - name: data-dir
@@ -148,9 +165,12 @@ You can configure the container with the following environmental variables.
     ```
     $ kubectl create -f etcdbk.yaml
     ```
-    Note: This will create all the necessary ClusterRole, ClusterRoleBinding, PVC, namespaces and Pod. Make sure the required PersistentVolume are created if your Kubernetes cluster does not support `Dynamic Storage Class`. Refer [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes) for guide to create PersistentVolume if required.
+    
+    > Note: This will create all the necessary ClusterRole, ClusterRoleBinding, PVC, namespaces and Pod. Make sure the required PersistentVolume is created if your Kubernetes cluster does not support `Dynamic Storage Class`. Refer [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes) for guide to create PersistentVolume if required.
 
-### Test the container
+Refer the sample yaml file [here](/etcdbk.yaml)
+
+### Test the Container on Kubernetes
 
 You can run the following command using `kubectl` to test the deployed Pod.
 
@@ -185,7 +205,3 @@ You will observe the output similar to the following:
 
 </details>
 
-
-# Important Notes
-
-You need to backup the `pki certs` in the each of the control plane node in order to restore your cluster. It is especially important to have all the `pki certs` for each node if you experience total lost of etcd chorum. The pki certs are located in `/etc/kubernetes/pki`

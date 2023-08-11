@@ -12,7 +12,7 @@ RUN apk add --no-cache bash git go \
     && ./build.sh \
     && cp /etcd-source/bin/etcdctl /etcd
 
-From redhat/ubi8-minimal:8.5-230
+FROM redhat/ubi8-minimal:8.5-230
 
 # kubectl version to use
 ENV KUBE_VERSION="v1.22.4"
@@ -22,12 +22,18 @@ ENV DATA_PATH="/data"
 ENV ETCD_PATH="/etcd"
 # path for snapshots
 ENV BAKCUP_PATH="${DATA_PATH}/snapshots"
+# Backup path for PKI
+ENV PKI_BACKUP_PATH="${DATA_PATH}/pki"
 # path for kubectl file
 ENV KUBE_PATH="${DATA_PATH}/bin"
 # path for log files
 ENV LOG_DIR="${DATA_PATH}/logs"
+# k8s PKI path
+ENV KUBE_PKI_PATH="/etc/kubernetes/pki"
+# k8s PKI path for local testing
+ENV KUBE_LOCAL_PKI_PATH=""
 # etcd PKI Hostpath
-ENV ETCD_PKI_HOSTPATH="/etc/kubernetes/pki/etcd"
+ENV ETCD_PKI_HOSTPATH="${KUBE_PKI_PATH}/etcd"
 # Default to UTC+0:00 as per current Kubernetes Cronjob limitation
 ENV TZ="Etc/GMT"
 # Enable/disable deveplopment mode, "off" or "on"
@@ -36,8 +42,10 @@ ENV DEV_MODE="off"
 ENV SNAPSHOT_HISTORY_KEEP=3
 # Log Level: info, debug
 ENV LOG_LEVEL="info"
+# Number of PKI backup files set to keep
+ENV PKI_HISTORY_KEEP=3
 
-Run microdnf update -y \
+RUN microdnf update -y \
     && microdnf install -y jq wget \
     # Change to 'install -y tzdata' when bug is resolved upstream.
     && microdnf reinstall -y tzdata \
