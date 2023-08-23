@@ -154,8 +154,8 @@ function cleanOldPKI(){
 
     debug "Backup path: ${PKI_BACKUP_PATH}"
     debug "Total backup file set: ${COUNTER}"
-    
-    for FILE in `ls -dtr */`; do 
+    # Reverse order the directories since they are copied using `cp -a` which original file attributes are preserved.
+    for FILE in `ls -dt */`; do 
         COUNTER=$[$COUNTER-1]
         if [ $[$COUNTER+1] -gt $PKI_HISTORY_KEEP ]; then
             debug "Going to delete PKI backup ${PKI_BACKUP_PATH}/$FILE ... "
@@ -208,6 +208,7 @@ function process_backup(){
         fi
     done
 
+    ## TODO: We do not need to backup PKI certs so often as they are only renewed yearly. Next is to change it to accommodate this.
     backupCerts
     cleanOldPKI
 

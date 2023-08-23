@@ -205,3 +205,6 @@ You will observe the output similar to the following:
 
 </details>
 
+## Future Improvement
+
+- We do not require same frequency of PKI backup as per the `etcd` snapshot since PKI only renewed yearly. Will improve this in future.
