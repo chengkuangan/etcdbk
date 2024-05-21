@@ -12,32 +12,54 @@ It is currently based on `redhat/ubi8-minimal` base image and supports both Linu
 
 ## Build the Container
 
-You can use Docker to build the container image. 
+You can use Docker or Podman to build the container image. 
 
-To build multi-arc container image, you will need to create and configure a multi-arch profile before proceed. Please refer the [documentation here](https://docs.docker.com/desktop/multi-arch/) for how to create a multi-arch build environment.
+To build Docker multi-arc container image, you will need to create and configure a multi-arch profile before proceed. Please refer the [documentation here](https://docs.docker.com/desktop/multi-arch/) for how to create a multi-arch build environment.
 
 The current `etcd` version is defaulted to "v3.5.0" in the [Dockerfile](./Dockerfile). 
+
 There is not intention or need to change this because you can change the `etcd` version to your preferred version using `--build-arg ETCD_VERSION=v3.5.0` at the `docker build` command.
 
 You can build and push to public container registry:
 
 ```
 $ ETCD_VERSION=v3.5.0
-$ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0  -f Dockerfile --push .
+
+# Docker 
+$ docker buildx build --platform linux/arm64,linux/amd64 \
+--build-arg ETCD_VERSION=${ETCD_VERSION} -t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0  \
+-f Dockerfile --push .
+
+# Podman
+$ podman build --platform linux/arm64,linux/amd64 \
+--build-arg ETCD_VERSION=${ETCD_VERSION} \
+-t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0 \
+-f Dockerfile
+$ podman push --creds <username>:<password> chengkuan/etcdbk:${ETCD_VERSION}-1.0.0
 ```
 
 Build and push to internal registy:
 
 ```
-# Internal insecured registry
-docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 -f Dockerfile --push --output=type=registry,registry.insecure=true .
+# Docker
+$ docker buildx build --platform linux/arm64,linux/amd64 --build-arg ETCD_VERSION=${ETCD_VERSION} -t nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 -f Dockerfile --push --output=type=registry,registry.insecure=true .
 
+# Podman
+$ podman build --platform linux/arm64,linux/amd64 \
+--build-arg ETCD_VERSION=${ETCD_VERSION} \
+-t chengkuan/etcdbk:${ETCD_VERSION}-1.0.0 \
+-f Dockerfile
+$ podman push --creds <username>:<password> --tls-verify=false nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0
 ```
 > Note: How to find out current etcd version in your system?
 > Run the following command to check on the etcd manifests yaml file.
 > ```
 > sudo su -
+> # Old image repo 
 > cat /etc/kubernetes/manifests/etcd.yaml | grep "image: k8s.gcr.io/etcd:"
+> # new image repo
+> cat /etc/kubernetes/manifests/etcd.yaml | grep "image: registry.k8s.io/etcd:"
+> 
 > ```
 
 ## Runtime Configuration
@@ -60,41 +82,42 @@ You can configure the container runtime behaviour with the following environment
 > Note: You need to build the container first. Push it to your own local container registry or public registry before proceed to perform local run. Refer [Build the Container](#build-the-container).
 
 1. Make a local directory
-  ```
-  $ mkdir etcdbk
-  $ cd etcdbk
-  ```
+
+    ```
+    $ mkdir etcdbk
+    $ cd etcdbk
+    ```
 
 2. Copy `ca.cert`, `server.crt` and `server.key` from the existing Kubernetes `etcd` node.
-  ```
-  $ SSH_USER=john
-  $ ETCD_NODE=10.0.0.110
-  $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/ca.crt ./ca.crt
-  $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/server.crt ./server.crt
-  $ ssh ${SSH_USER}@${ETCD_NODE} "sudo cp /etc/kubernetes/pki/etcd/server.key /tmp/server.key && sudo chmod 777 /tmp/server.key"
-  $ scp ${SSH_USER}@${ETCD_NODE}:/tmp/server.key ./server.key
-  $ ssh ${SSH_USER}@${ETCD_NODE} sudo rm /tmp/server.key
-  ```
+    ```
+    $ SSH_USER=john
+    $ ETCD_NODE=10.0.0.110
+    $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/ca.crt ./ca.crt
+    $ scp ${SSH_USER}@${ETCD_NODE}:/etc/kubernetes/pki/etcd/server.crt ./server.crt
+    $ ssh ${SSH_USER}@${ETCD_NODE} "sudo cp /etc/kubernetes/pki/etcd/server.key /tmp/server.key && sudo chmod 777 /tmp/server.key"
+    $ scp ${SSH_USER}@${ETCD_NODE}:/tmp/server.key ./server.key
+    $ ssh ${SSH_USER}@${ETCD_NODE} sudo rm /tmp/server.key
+    ```
 
 3. Create local directory named `certs` in the same root directory. Copy some sample certificates into this directory. They can be the certificates you downloaded from previous step. This is required only for local testing.
 
 4. Run the following to test the container locally. The container will make a remote connection to your Kubernetes `etcd` instance.
 
-  ```
-  ETCD_VERSION=v3.5.0; docker run -it \
-  -v $(pwd)/data:/data \
-  -v $(pwd)/ca.crt:/tmp/ca.crt \
-  -v $(pwd)/server.crt:/tmp/server.crt \
-  -v $(pwd)/server.key:/tmp/server.key \
-  -v $(pwd)/certs:/tmp/certs \
-  -e DEV_MODE="on" \
-  -e LOG_LEVEL="debug" \
-  -e PKI_BAKCUP_PATH=./pki \
-  -e PKI_HISTORY_KEEP=2 \
-  -e SNAPSHOT_HISTORY_KEEP=2 \
-  --rm \
-  nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 /etcd/run-backup.sh kube0.internal https://${ETCD_NODE}:2379 /tmp/ca.crt /tmp/server.crt /tmp/server.key
-  ```
+    ```
+    ETCD_VERSION=v3.5.0; docker run -it \
+    -v $(pwd)/data:/data \
+    -v $(pwd)/ca.crt:/tmp/ca.crt \
+    -v $(pwd)/server.crt:/tmp/server.crt \
+    -v $(pwd)/server.key:/tmp/server.key \
+    -v $(pwd)/certs:/tmp/certs \
+    -e DEV_MODE="on" \
+    -e LOG_LEVEL="debug" \
+    -e PKI_BAKCUP_PATH=./pki \
+    -e PKI_HISTORY_KEEP=2 \
+    -e SNAPSHOT_HISTORY_KEEP=2 \
+    --rm \
+    nexus.internal:7082/repository/containers/etcdbk:${ETCD_VERSION}-1.0.0 /etcd/run-backup.sh kube0.internal https://${ETCD_NODE}:2379 /tmp/ca.crt /tmp/server.crt /tmp/server.key
+    ```
 
 ## Deploy into Kubernetes
 
@@ -159,8 +182,7 @@ You can configure the container runtime behaviour with the following environment
               claimName: etcdbk-data
 
     ```
-
-2. Deploy the container to Kubernetes
+5. Deploy the container to Kubernetes
 
     ```
     $ kubectl create -f etcdbk.yaml
@@ -169,6 +191,22 @@ You can configure the container runtime behaviour with the following environment
     > Note: This will create all the necessary ClusterRole, ClusterRoleBinding, PVC, namespaces and Pod. Make sure the required PersistentVolume is created if your Kubernetes cluster does not support `Dynamic Storage Class`. Refer [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes) for guide to create PersistentVolume if required.
 
 Refer the sample yaml file [here](/etcdbk.yaml)
+
+### Apply Changes or Updates the Existing Deployment
+
+- If the `kubectl` version is upgraded, you need to change the `KUBE_VERSION` in the YAML file.
+
+  ```yaml
+  - name: KUBE_VERSION
+    value: "v1.28.9"
+  ```
+  
+  Redeploy by applying the changes: 
+
+  ```
+  kubectl apply -f etcdbk.yaml
+  ```
+  A compatible `kubectl` version will be downloaded when the job is started.
 
 ### Test the Container on Kubernetes
 
@@ -208,3 +246,4 @@ You will observe the output similar to the following:
 ## Future Improvement
 
 - We do not require same frequency of PKI backup as per the `etcd` snapshot since PKI only renewed yearly. Will improve this in future.
+- Provide ETCD restore utility

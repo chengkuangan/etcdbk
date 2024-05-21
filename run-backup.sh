@@ -252,8 +252,14 @@ function init(){
     if [ ! -f "${KUBE_PATH}/kubectl" ]; then 
         downloadKubeFiles
     else
-        if [[ ! "$(${KUBE_PATH}/kubectl version)" =~ .*GitVersion:\"${KUBE_VERSION}\".* ]]; then 
-            logInfo "Current kubectl version is not matching the provided env variable ${KUBE_VERSION}."
+        SERVER_KUBECTL_VERSION="$(${KUBE_PATH}/kubectl version -o json | jq '.serverVersion.gitVersion' | sed 's/\"//g')"; 
+        CLIENT_KUBECTL_VERSION="$(${KUBE_PATH}/kubectl version -o json | jq '.clientVersion.gitVersion' | sed 's/\"//g')"; 
+        
+        logInfo "Kubectl Server Version: $SERVER_KUBECTL_VERSION" 
+        logInfo "Kubectl Client Version: $CLIENT_KUBECTL_VERSION" 
+
+        if [[ ! "${SERVER_KUBECTL_VERSION}" = "${CLIENT_KUBECTL_VERSION}"  ]]; then 
+            logInfo "Current kubectl version is not matching the provided env variable KUBE_VERSION:${KUBE_VERSION}"
             logInfo "Proceed to download the correct kubectl version."
             downloadKubeFiles
         fi
