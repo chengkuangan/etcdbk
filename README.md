@@ -2,7 +2,7 @@
 
 Instead of re-invent the wheel to create another tool to backup the Kubernetes `etcd` data, we can now automate the Kubernetes `etcd` data backup using `etcdbk` container by reusing the existing Kubernetes `kubectl` and `etcd` tool.
 
-You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Conjob`. Once it is deployed and configured, the `etcdbk` container will perform the `etcd` snapshot and create the snapshot files on the pre-configured persistent volume. The respective PKI certs are backup into the same PV.
+You can schedule the `etcdbk` container to snapshot the `etcd` data on a periodical basis by the using the `Cronjob`. Once it is deployed and configured, the `etcdbk` container will perform the `etcd` snapshot and create the snapshot files on the pre-configured persistent volume. The respective PKI certs are backup into the same PV.
 
 With these snapshots created per scheduled, you can now using your existing storage backup mechanism to backup these snapshots to your backup media.
 
@@ -121,7 +121,7 @@ You can configure the container runtime behaviour with the following environment
 
 ## Deploy into Kubernetes
 
-1. Open [etcdbk.yaml](./etcdbk.yaml) and change the `Conjob` schedule to your preference. 
+1. Open [etcdbk.yaml](./etcdbk.yaml) and change the `Cronjob` schedule to your preference. 
 
     ```yaml
     apiVersion: batch/v1
